@@ -1,128 +1,116 @@
-from ctypes import *
+try:
+    import struct
+except ImportError:
+    import ustruct as struct
 
 
-class I2CDevice():
+class BMP280Calib():
+    _layout = 'HhhHhhhhhhhh'
 
-    def __init__(self, device, address):
-        self.device = device
-        self.address = address
+    def __init__(
+        self,
+        dig_T1,
+        dig_T2,
+        dig_T3,
+        dig_P1,
+        dig_P2,
+        dig_P3,
+        dig_P4,
+        dig_P5,
+        dig_P6,
+        dig_P7,
+        dig_P8,
+        dig_P9,
+    ) -> None:
+        self.dig_T1 = dig_T1
+        self.dig_T2 = dig_T2
+        self.dig_T3 = dig_T3
+        self.dig_P1 = dig_P1
+        self.dig_P2 = dig_P2
+        self.dig_P3 = dig_P3
+        self.dig_P4 = dig_P4
+        self.dig_P5 = dig_P5
+        self.dig_P6 = dig_P6
+        self.dig_P7 = dig_P7
+        self.dig_P8 = dig_P8
+        self.dig_P9 = dig_P9
 
-    def read_byte(self, address):
-        return self.device.read_byte_data(self.address, address)
-
-    def read_bytes(self, address, size):
-        return bytes(
-            self.device.read_i2c_block_data(self.address, address, size))
-
-    def write_byte(self, address, value):
-        self.device.write_byte_data(self.address, address, value)
-
-    def write_bytes(self, address, value):
-        self.device.write_i2c_block_data(self.address, address, value)
-
-
-class BMP280Calib(Structure):
-    _pack_ = 1
-    _fields_ = [
-        #(字段名, c类型 )
-        ('dig_T1', c_uint16),
-        ('dig_T2', c_int16),
-        ('dig_T3', c_int16),
-        ('dig_P1', c_uint16),
-        ('dig_P2', c_int16),
-        ('dig_P3', c_int16),
-        ('dig_P4', c_int16),
-        ('dig_P5', c_int16),
-        ('dig_P6', c_int16),
-        ('dig_P7', c_int16),
-        ('dig_P8', c_int16),
-        ('dig_P9', c_int16),
-    ]
-
-
-BMP280_SLAVE_ADDRESS = 0x77
-
-# calibration parameters
-BMP280_DIG_T1_LSB_REG = 0x88
-BMP280_DIG_T1_MSB_REG = 0x89
-BMP280_DIG_T2_LSB_REG = 0x8A
-BMP280_DIG_T2_MSB_REG = 0x8B
-BMP280_DIG_T3_LSB_REG = 0x8C
-BMP280_DIG_T3_MSB_REG = 0x8D
-BMP280_DIG_P1_LSB_REG = 0x8E
-BMP280_DIG_P1_MSB_REG = 0x8F
-BMP280_DIG_P2_LSB_REG = 0x90
-BMP280_DIG_P2_MSB_REG = 0x91
-BMP280_DIG_P3_LSB_REG = 0x92
-BMP280_DIG_P3_MSB_REG = 0x93
-BMP280_DIG_P4_LSB_REG = 0x94
-BMP280_DIG_P4_MSB_REG = 0x95
-BMP280_DIG_P5_LSB_REG = 0x96
-BMP280_DIG_P5_MSB_REG = 0x97
-BMP280_DIG_P6_LSB_REG = 0x98
-BMP280_DIG_P6_MSB_REG = 0x99
-BMP280_DIG_P7_LSB_REG = 0x9A
-BMP280_DIG_P7_MSB_REG = 0x9B
-BMP280_DIG_P8_LSB_REG = 0x9C
-BMP280_DIG_P8_MSB_REG = 0x9D
-BMP280_DIG_P9_LSB_REG = 0x9E
-BMP280_DIG_P9_MSB_REG = 0x9F
-
-BMP280_CHIPID_REG = 0xD0  # Chip ID Register
-BMP280_RESET_REG = 0xE0  # Softreset Register
-BMP280_STATUS_REG = 0xF3  # Status Register
-BMP280_CTRLMEAS_REG = 0xF4  # Ctrl Measure Register
-BMP280_CONFIG_REG = 0xF5  # Configuration Register
-BMP280_PRESSURE_MSB_REG = 0xF7  # Pressure MSB Register
-BMP280_PRESSURE_LSB_REG = 0xF8  # Pressure LSB Register
-BMP280_PRESSURE_XLSB_REG = 0xF9  # Pressure XLSB Register
-BMP280_TEMPERATURE_MSB_REG = 0xFA  # Temperature MSB Reg
-BMP280_TEMPERATURE_LSB_REG = 0xFB  # Temperature LSB Reg
-BMP280_TEMPERATURE_XLSB_REG = 0xFC  # Temperature XLSB Reg
-
-BMP280_SLEEP_MODE = 0x00
-BMP280_FORCED_MODE = 0x01
-BMP280_NORMAL_MODE = 0x03
-
-BMP280_TEMPERATURE_CALIB_DIG_T1_LSB_REG = 0x88
-BMP280_PRESSURE_TEMPERATURE_CALIB_DATA_LENGTH = 24
-BMP280_DATA_FRAME_SIZE = 6
-
-BMP280_OVERSAMP_SKIPPED = 0x00
-BMP280_OVERSAMP_1X = 0x01
-BMP280_OVERSAMP_2X = 0x02
-BMP280_OVERSAMP_4X = 0x03
-BMP280_OVERSAMP_8X = 0x04
-BMP280_OVERSAMP_16X = 0x05
-
-BMP280_PRESSURE_OSR = BMP280_OVERSAMP_8X
-BMP280_TEMPERATURE_OSR = BMP280_OVERSAMP_16X
-BMP280_MODE = BMP280_PRESSURE_OSR << 2 | BMP280_TEMPERATURE_OSR << 5 | BMP280_NORMAL_MODE
+    @staticmethod
+    def from_bytes(datas):
+        vs = struct.unpack(BMP280Calib._layout, datas)
+        return BMP280Calib(
+            dig_T1=vs[0],
+            dig_T2=vs[1],
+            dig_T3=vs[2],
+            dig_P1=vs[3],
+            dig_P2=vs[4],
+            dig_P3=vs[5],
+            dig_P4=vs[6],
+            dig_P5=vs[7],
+            dig_P6=vs[8],
+            dig_P7=vs[9],
+            dig_P8=vs[10],
+            dig_P9=vs[11],
+        )
 
 
-class Bmp280:
-    _i2c = None
-    _address = 0x77
+class Mode:
+    Sleep = 0x00
+    Forced = 0x01
+    Normal = 0x03
+
+
+class Oversamp:
+    Skipped = 0x00
+    Os1x = 0x01
+    Os2x = 0x02
+    Os4x = 0x03
+    Os8x = 0x04
+    Os16x = 0x05
+
+
+class Config:
+    pressure_osr = Oversamp.Os8x
+    temperature_osr = Oversamp.Os16x
+    mode = Mode.Normal
+
+    @staticmethod
+    def to_bytes():
+        return Config.temperature_osr << 5 | Config.pressure_osr << 2 | Config.mode
+
+
+class BMP280:
+    address = 0x77
+
     _bmp280_id = None
     _bmp280_cal = None
+    _data_frame_size = 6
     _filter_buf = []
-    t_fine = 0
+    _t_fine = 0
 
-    def __init__(self, i2c):
-        self._i2c = I2CDevice(i2c, BMP280_SLAVE_ADDRESS)
+    class Address:
+        ChipIDRegister = 0xD0
+        CtrlMeasureRegister = 0xF4
+        ConfigurationRegister = 0xF5
+        PressureMSBRegister = 0xF7
+        CalibDigT1LSBRegister = 0x88
+
+    def __init__(self, i2c) -> None:
+        self._i2c = i2c
 
     def init(self):
-        self._bmp280_id = self._i2c.read_byte(BMP280_CHIPID_REG)
-        datas = self._i2c.read_bytes(BMP280_DIG_T1_LSB_REG, 24)
-        self._bmp280_cal = BMP280Calib.from_buffer_copy(datas)
-        self._i2c.write_byte(BMP280_CTRLMEAS_REG, BMP280_MODE)
-        self._i2c.write_byte(BMP280_CONFIG_REG, 5 << 2)
+        self._bmp280_id = self._i2c.read_bytes(self.Address.ChipIDRegister)
+        datas = self._i2c.read_bytes(self.Address.CalibDigT1LSBRegister, 24)
+        self._bmp280_cal = BMP280Calib.from_bytes(datas)
+        self._i2c.write_bytes(self.Address.CtrlMeasureRegister,
+                              Config.to_bytes())
+        self._i2c.write_bytes(self.Address.ConfigurationRegister, 5 << 2)
         self._filter_buf = []
 
     def get_pressure(self):
         # read data from sensor
-        data = self._i2c.read_bytes(BMP280_PRESSURE_MSB_REG,
-                                    BMP280_DATA_FRAME_SIZE)
+        data = self._i2c.read_bytes(self.Address.PressureMSBRegister,
+                                    self._data_frame_size)
         bmp280RawPressure = (((data[0]) << 12) | ((data[1]) << 4) |
                              (data[2] >> 4))
         bmp280RawTemperature = (((data[3]) << 12) | ((data[4]) << 4) |
@@ -132,16 +120,16 @@ class Bmp280:
     def compensate_t(self, value):
         """
         Returns temperature in DegC, resolution is 0.01 DegC. Output value of "5123" equals 51.23 DegC
-        t_fine carries fine temperature as global value
+        _t_fine carries fine temperature as global value
         """
         var1 = ((((value >> 3) - (self._bmp280_cal.dig_T1 << 1))) *
                 (self._bmp280_cal.dig_T2)) >> 11
         var2 = (((((value >> 4) - (self._bmp280_cal.dig_T1)) *
                   ((value >> 4) - (self._bmp280_cal.dig_T1))) >> 12) *
                 (self._bmp280_cal.dig_T3)) >> 14
-        self.t_fine = var1 + var2
+        self._t_fine = var1 + var2
 
-        T = (self.t_fine * 5 + 128) >> 8
+        T = (self._t_fine * 5 + 128) >> 8
 
         return T
 
@@ -150,7 +138,7 @@ class Bmp280:
         Returns pressure in Pa as unsigned 32 bit integer in Q24.8 format (24 integer bits and 8 fractional bits).
         Output value of "24674867" represents 24674867/256 = 96386.2 Pa = 963.862 hPa
         """
-        var1 = (self.t_fine) - 128000
+        var1 = (self._t_fine) - 128000
         var2 = var1 * var1 * self._bmp280_cal.dig_P6
         var2 = var2 + ((var1 * self._bmp280_cal.dig_P5) << 17)
         var2 = var2 + ((self._bmp280_cal.dig_P4) << 35)
@@ -197,7 +185,10 @@ class Bmp280:
 
 if __name__ == "__main__":
     import smbus
+    from i2c import I2CDeviceSmbus
+
     i2c3 = smbus.SMBus(3)
-    bmp280 = Bmp280(i2c3)
+    bmp280 = BMP280(I2CDeviceSmbus(i2c3, BMP280.address))
     bmp280.init()
-    print(bmp280.get_data())
+    p, t, a = bmp280.get_data()
+    print(f"{p:0.6f} {t:0.6f} {a:0.6f}")
