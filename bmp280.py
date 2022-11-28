@@ -99,17 +99,17 @@ class BMP280:
         self._i2c = i2c
 
     def init(self):
-        self._bmp280_id = self._i2c.read_bytes(self.Address.ChipIDRegister)
-        datas = self._i2c.read_bytes(self.Address.CalibDigT1LSBRegister, 24)
+        self._bmp280_id = self._i2c.read_reg_bytes(self.Address.ChipIDRegister)
+        datas = self._i2c.read_reg_bytes(self.Address.CalibDigT1LSBRegister, 24)
         self._bmp280_cal = BMP280Calib.from_bytes(datas)
-        self._i2c.write_bytes(self.Address.CtrlMeasureRegister,
+        self._i2c.write_reg_bytes(self.Address.CtrlMeasureRegister,
                               Config.to_bytes())
-        self._i2c.write_bytes(self.Address.ConfigurationRegister, 5 << 2)
+        self._i2c.write_reg_bytes(self.Address.ConfigurationRegister, 5 << 2)
         self._filter_buf = []
 
     def get_pressure(self):
         # read data from sensor
-        data = self._i2c.read_bytes(self.Address.PressureMSBRegister,
+        data = self._i2c.read_reg_bytes(self.Address.PressureMSBRegister,
                                     self._data_frame_size)
         bmp280RawPressure = (((data[0]) << 12) | ((data[1]) << 4) |
                              (data[2] >> 4))

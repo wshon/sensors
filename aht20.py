@@ -14,13 +14,13 @@ class ATH20:
         pass
 
     def init(self) -> bool:
-        self._i2c.write_bytes(self.Address.INIT, b'\x08\x00')
+        self._i2c.write_reg_bytes(self.Address.INIT, b'\x08\x00')
         time.sleep(0.5)
         retry_count = 0
         while not self.read_cal_enable():
-            self._i2c.write_bytes(self.Address.SoftReset, b'')
+            self._i2c.write_reg_bytes(self.Address.SoftReset, b'')
             time.sleep(0.2)
-            self._i2c.write_bytes(self.Address.INIT, b'\x08\x00')
+            self._i2c.write_reg_bytes(self.Address.INIT, b'\x08\x00')
             retry_count += 1
             if retry_count >= 10:
                 return False
@@ -28,14 +28,14 @@ class ATH20:
         return True
 
     def read_status(self) -> int:
-        return self._i2c.read_bytes(0x00)
+        return self._i2c.read_reg_bytes(0x00)
 
     def read_cal_enable(self) -> bool:
         val = self.read_status()
         return (val & 0x68) == 0x08
 
     def read_ct_data(self):
-        self._i2c.write_bytes(self.Address.StartTest, b'\x33\x00')
+        self._i2c.write_reg_bytes(self.Address.StartTest, b'\x33\x00')
         time.sleep(0.075)
         retry_count = 0
         while (self.read_status() & 0x80) == 0x80:
@@ -43,7 +43,7 @@ class ATH20:
             retry_count += 1
             if retry_count >= 100:
                 break
-        data = self._i2c.read_bytes(0x00, 7)
+        data = self._i2c.read_reg_bytes(0x00, 7)
         c = (data[1] << 12) | (data[2] << 4) | (data[3] >> 4)
         t = ((data[3] & 0x0f) << 16) | (data[4] << 8) | (data[5])
         c10 = c * 100 * 10 / 1024 / 1024
