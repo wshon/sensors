@@ -32,31 +32,36 @@ bmp280 = BMP280(i2c_device)
 print("Initialize SGP30...")
 sgp30 = SGP30(i2c_device)
 
+def publish_device():
+    print(AVAILABILITY_TOPIC)
+    # Publish as available once connected
+    CLIENT.publish(AVAILABILITY_TOPIC, "online")
+    CLIENT.publish(ATH20_T_TOPIC, ATH20_T_PAYLOD)
+    CLIENT.publish(ATH20_H_TOPIC, ATH20_H_PAYLOD)
+    CLIENT.publish(BMP280_P_TOPIC, BMP280_P_PAYLOD)
+    CLIENT.publish(BMP280_T_TOPIC, BMP280_T_PAYLOD)
+    CLIENT.publish(BMP280_A_TOPIC, BMP280_A_PAYLOD)
+    CLIENT.publish(SGP30_C_TOPIC, SGP30_C_PAYLOD)
+    CLIENT.publish(SGP30_T_TOPIC, SGP30_T_PAYLOD)
+
+def on_msg(topic, msg):
+    print(f"Received {msg} on {topic}")
+    publish_device()
+
 print("Connecting to MQTTClient...")
 CLIENT = MQTTClient(CLIENT_ID, SERVER, keepalive=60)
-# CLIENT.set_callback(on_new_msg)
+CLIENT.set_callback(on_msg)
 CLIENT.connect()
 
-# CLIENT.subscribe(HA_STATUS_TOPIC)
-
-print(AVAILABILITY_TOPIC)
-# Publish as available once connected
-CLIENT.publish(AVAILABILITY_TOPIC, "online")
-CLIENT.publish(ATH20_T_TOPIC, ATH20_T_PAYLOD)
-CLIENT.publish(ATH20_H_TOPIC, ATH20_H_PAYLOD)
-CLIENT.publish(BMP280_P_TOPIC, BMP280_P_PAYLOD)
-CLIENT.publish(BMP280_T_TOPIC, BMP280_T_PAYLOD)
-CLIENT.publish(BMP280_A_TOPIC, BMP280_A_PAYLOD)
-CLIENT.publish(SGP30_C_TOPIC, SGP30_C_PAYLOD)
-CLIENT.publish(SGP30_T_TOPIC, SGP30_T_PAYLOD)
-
+CLIENT.subscribe(HA_STATUS_TOPIC)
+publish_device()
 print("Connected to {}, subscribed to {} topic".format(SERVER, HA_STATUS_TOPIC))
 
 try:
     sgp30_steady = False
     tmr_start_time = utime.time()
     while 1:
-        # CLIENT.wait_msg()
+        CLIENT.check_msg()
         t = utime.time()
         if t - tmr_start_time > 1:
             print("1 sec elapsed, sending data to the server...")
@@ -77,6 +82,7 @@ try:
             tmr_start_time += 1
 except Exception as e:
     print(e)
+    raise e
 finally:
     CLIENT.publish(AVAILABILITY_TOPIC, "offline")
     CLIENT.disconnect()
